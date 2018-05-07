@@ -1,0 +1,83 @@
+<!doctype html>
+<html>
+<head>
+    <title>Socket.IO chat</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.0/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-9gVQ4dYFwwWSjIDZnLEWnxCjeSWFphJiwGPXr1jddIhOegiu1FwO5qRGvFXOdJZ4" crossorigin="anonymous">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font: 13px Helvetica, Arial; }
+        form { background: #000; padding: 3px; position: fixed; bottom: 0; width: 100%; }
+        form input { border: 0; padding: 10px; width: 90%; margin-right: .5%; }
+        form button { width: 9%; background: rgb(130, 224, 255); border: none; padding: 10px; }
+        #messages { list-style-type: none; margin: 0; padding: 0; }
+        #messages li { padding: 5px 10px; }
+        #messages li:nth-child(odd) { background: #eee; }
+        #typing {
+            display: none;
+            padding: 5px 10px;
+        }
+    </style>
+</head>
+<script src="/socket.io/socket.io.js"></script>
+<script src="https://code.jquery.com/jquery-1.11.1.js"></script>
+<script>
+  $(function () {
+    var socket = io();
+    var typing = false;
+
+    $('form').submit(function () {
+      socket.emit('chat message', $('#m').val());
+      $('#m').val('');
+      return false;
+    });
+    socket.on('chat message', function (msg, name) {
+      $('#messages').append($('<li>').text(name + ': ' + msg))
+    });
+
+    socket.on('user-connected', function (len, name) {
+      $('#username').text(name);
+      $('#messages').append($('<li>').text(name + ' joined: ' + len + ' users connected'));
+    });
+
+    socket.on('user-disconnected', function (len, name) {
+      $('#messages').append($('<li>').text(name + ' disconnected: ' + len + ' users connected'));
+    });
+
+    socket.on('user-typing', function (name) {
+        typing = true;
+
+    });
+
+    socket.on('user-typing', function (name) {
+        $('#typing').slideDown(500).text(name + ' is typing...');
+        typingTimeout = setTimeout(function () {
+            $('#typing').slideUp(500);
+        }, 2000);
+    });
+
+    // Check if user is typing
+    $('#m').keypress(function (e) {
+      if (e.which !== 13) {
+        socket.emit('typing', true);
+        typing = true;
+        clearTimeout(timeout);
+        timeout = setTimeout(function () {
+            socket.emit('typing', false);
+        }, 2000);
+      }
+    });
+  });
+
+</script>
+<body>
+<ul id="messages"></ul>
+<div id="typing"></div>
+<form action="">
+    <div class="input-group mb-3">
+        <input id="m" type="text" autocomplete="off" class="form-control" aria-label="Default" aria-describedby="inputGroup-sizing-default">
+        <button type="button" class="btn btn-primary">Send</button>
+    </div>
+    <!--<input id="m" autocomplete="off" />-->
+</form>
+</body>
+</html>
