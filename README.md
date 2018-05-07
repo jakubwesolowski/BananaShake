@@ -1,3 +1,3 @@
 # BananaShake
 
-Simple web-based messanger for the masses
+Simple web-based messenger for the masses
