@@ -19,25 +19,21 @@ $(function () {
       $('#messages').append($('<li>').text(name + ' disconnected: ' + len + ' users connected'));
     });
     socket.on('user-typing', function (name) {
-      typing = true;
-    });
-    socket.on('user-typing', function (name) {
       $('#typing').slideDown(500).text(name + ' is typing...');
-        typingTimeout = setTimeout(function () {
-          $('#typing').slideUp(500);
-        }, 2000);
+    });
+    socket.on('user-stopped-typing', function (name) {
+      $('#typing').slideUp(500);
     });
 
     // Check if user is typing
+    var timer;
     $('#m').keypress(function (e) {
       if (e.which !== 13) {
-        var timeout;
+        clearTimeout(timer);
         socket.emit('typing', true);
-        typing = true;
-        clearTimeout(timeout);
-        timeout = setTimeout(function () {
-          socket.emit('typing', false);
-        }, 2000);
+        timer = setTimeout(function() {
+          socket.emit('typing', false)
+        }, 1000);
       }
     });
 });
