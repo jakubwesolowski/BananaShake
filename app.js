@@ -11,16 +11,19 @@ const passport = require('passport');
 const LocalStrategy = require('passport-local');
 
 const usersRegistered = [
-    {id: '2f24vvg', email: 'kubawesolowski@me.com', password: 'pass'}
+    {id: '2f24vvg', email: 'kubawesolowski@me.com', password: 'pass', nickname: 'Kuba'},
+    {id: '809g43j', email: 'patryk@zolkiewski.pl', password: 'carbon', nickname: 'Patryk'}
 ];
 
 // Setting passport to use local strategy
 passport.use(new LocalStrategy(
     { usernameField: 'email'},
     (email, password, done) => {
-        const user = usersRegistered[0];
-        if (email === user.email && password === user.password) {
-            return done(null, user);
+        for(var i = 0; i < usersRegistered.length; i++) {
+            const user = usersRegistered[i];
+            if (email === user.email && password === user.password) {
+                return done(null, user);
+            }
         }
     }
 ));
@@ -30,7 +33,12 @@ passport.serializeUser((user, done) => {
 });
 
 passport.deserializeUser((id, done) => {
-    const user = usersRegistered[0].id === id ? usersRegistered[0] : false;
+    var user = false;
+    for(var i = 0; i < usersRegistered.length; i++) {
+        if (usersRegistered[i].id === id) {
+            user = usersRegistered[i];
+        }
+    }
     done(null, user);
 });
 
@@ -51,7 +59,7 @@ app.use(passport.session());
 app.use("/public", express.static(path.join(__dirname, 'public')));
 app.get('/', (req, res) => {
     if (req.isAuthenticated()) {
-        res.send('You are on auth page!');
+        res.sendFile(__dirname + '/views/index.html');
     } else {
         res.redirect('/login');
     }
@@ -69,6 +77,16 @@ app.post('/login', function (req, res, next) {
     })(req, res, next);
 });
 
+// TODO: Implement register form, save it to table first
+app.get('/register', function (req, res) {
+    res.sendFile(__dirname + '/views/register.html');
+});
+
+
+app.post('/register', function (req, res) {
+    // req.register
+});
+
 class User {
   constructor(name) {
     this.name = name;
@@ -76,10 +94,10 @@ class User {
 }
 User.id = 0;
 
-
 connections = [];
 users = [];
 
+// TODO: Get username from session
 io.on('connection', function (socket) {
   var user = new User('Guest' + User.id++);
 
