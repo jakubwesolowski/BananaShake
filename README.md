@@ -10,4 +10,4 @@ Yeah!
  * logout button
  * "bananashake" 
  * some padding stuff
-3. Added Logout button
+3. Added Logout feature
