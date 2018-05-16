@@ -11,24 +11,45 @@ const cookieParser = require('cookie-parser');
 const passport = require('passport');
 const LocalStrategy = require('passport-local');
 const passportSocketIo = require('passport.socketio');
+const mysql = require('mysql');
 
-const usersRegistered = [
-    {id: '2f24vvg', email: 'kubawesolowski@me.com', password: 'pass', nickname: 'Kuba'},
-    {id: '809g43j', email: 'patryk@zolkiewski.pl', password: 'carbon', nickname: 'Patryk'}
-];
+const connection = mysql.createConnection({
+    host: '192.168.1.141',
+    user: 'banana',
+    password: 'shake',
+    database: 'bananashake'
+});
+
+connection.connect((err) => {
+    if (err) {
+        console.log('Error connecting to database!');
+    } else {
+        console.log('Successfully connected to database!');
+    }
+});
 
 // Setting passport to use local strategy
 passport.use(new LocalStrategy(
     { usernameField: 'email'},
     (email, password, done) => {
-        for(var i = 0; i < usersRegistered.length; i++) {
-            const user = usersRegistered[i];
-            if (email === user.email && password === user.password) {
-              return done(null, user);
-            }else{
-              
+        connection.query('SELECT * FROM User WHERE email = ?', [email], (err, result) => {
+            if(err) throw err;
+            if (result.length > 0) {
+                const user = result[0];
+                if (email === user.email && password === user.pass) {
+                    return done(null, {
+                        id: user.idUser,
+                        nickname: user.nickname,
+                        name: user.name,
+                        surname: user.surname,
+                        email: user.email,
+                        pass: user.pass
+                    })
+                }
+            } else {
+                return done(null, false);
             }
-        }
+        });
     }
 ));
 
@@ -37,13 +58,13 @@ passport.serializeUser((user, done) => {
 });
 
 passport.deserializeUser((id, done) => {
-    var user = false;
-    for(var i = 0; i < usersRegistered.length; i++) {
-        if (usersRegistered[i].id === id) {
-            user = usersRegistered[i];
+    connection.query('SELECT * FROM User WHERE idUser = ?', [parseInt(id, 10)], (err, results) => {
+        if(err){
+            return done(err);
+        } else {
+            done(null, results[0]);
         }
-    }
-    done(null, user);
+    });
 });
 
 app.use(bodyParser.urlencoded({ extend: false }));
@@ -86,14 +107,21 @@ app.get('/logout', function(req, res){
   res.redirect('/');
 });
 
-// TODO: Implement register form, save it to table first
 app.get('/register', function (req, res) {
     res.sendFile(__dirname + '/views/register.html');
 });
 
-
 app.post('/register', function (req, res) {
-    // req.register
+    console.log('Nickanme: ' + req.body.nickname + ' name: ' + req.body.name);
+    connection.query('INSERT INTO User(nickname, name, surname, email, pass) VALUES(?,?,?,?,?)',
+        [req.body.nickname, req.body.name, req.body.surname, req.body.email, req.body.pass],
+        (err) => {
+            if(err){
+                throw err;
+            } else {
+                res.redirect('/login');
+            }
+        });
 });
 
 connections = [];
